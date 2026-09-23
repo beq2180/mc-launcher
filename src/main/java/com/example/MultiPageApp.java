@@ -52,252 +52,190 @@ public class MultiPageApp {
 
         // Left Navigation Pillar Sidebar Layout
         JPanel sidebarWrapper = new JPanel(new BorderLayout());
-        sidebarWrapper.setPreferredSize(new Dimension(80, 650));
+        sidebarWrapper.setPreferredSize(new Dimension(200, 650));
         sidebarWrapper.setBackground(COLOR_SIDEBAR);
 
         sidebar = new JPanel();
         sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
         sidebar.setBackground(COLOR_SIDEBAR);
-        sidebarWrapper.add(sidebar, BorderLayout.NORTH);
+        
+        JScrollPane sidebarScroll = new JScrollPane(sidebar);
+        sidebarScroll.setBorder(BorderFactory.createEmptyBorder());
+        sidebarScroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        sidebarScroll.setBackground(COLOR_SIDEBAR);
+        sidebarScroll.getViewport().setBackground(COLOR_SIDEBAR);
 
-        // Core Viewport Component Workspace Card Manager
+        // Control buttons at the top of the sidebar
+        JPanel controls = new JPanel(new GridLayout(2, 1, 5, 5));
+        controls.setBackground(COLOR_SIDEBAR);
+        controls.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        JButton btnAddPage = createStyledButton("Add Page", COLOR_BUTTON_GREEN);
+        btnAddPage.addActionListener(e -> addNewPage());
+        controls.add(btnAddPage);
+
+        JButton btnLoadMods = createStyledButton("Scan Mods", COLOR_BUTTON_GRAY);
+        btnLoadMods.addActionListener(e -> scanModsFolder(modsDir));
+        controls.add(btnLoadMods);
+
+        sidebarWrapper.add(controls, BorderLayout.NORTH);
+        sidebarWrapper.add(sidebarScroll, BorderLayout.CENTER);
+
+        // Main content area using CardLayout
         cardLayout = new CardLayout();
         contentContainer = new JPanel(cardLayout);
         contentContainer.setBackground(COLOR_BG);
 
+        // Add a placeholder panel for when no pages exist
+        JPanel placeholder = new JPanel(new GridBagLayout());
+        placeholder.setBackground(COLOR_BG);
+        JLabel lblPlaceholder = new JLabel("Click 'Add Page' to create a new workspace.");
+        lblPlaceholder.setForeground(COLOR_TEXT_WHITE);
+        placeholder.add(lblPlaceholder);
+        contentContainer.add(placeholder, "PLACEHOLDER");
+        cardLayout.show(contentContainer, "PLACEHOLDER");
+
+        // Assemble frame
         frame.add(sidebarWrapper, BorderLayout.WEST);
         frame.add(contentContainer, BorderLayout.CENTER);
-
-        showCreationScreen();
         frame.setVisible(true);
     }
 
-    private void showCreationScreen() {
-        JPanel creationPanel = new JPanel(new BorderLayout());
-        creationPanel.setBackground(COLOR_BG);
-
-        JPanel headerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 20));
-        headerPanel.setBackground(COLOR_BG);
-        JLabel backArrow = new JLabel("➔");
-        backArrow.setForeground(COLOR_TEXT_WHITE);
-        backArrow.setFont(new Font("Arial", Font.BOLD, 24));
-        headerPanel.add(backArrow);
-        creationPanel.add(headerPanel, BorderLayout.NORTH);
-
-        JLabel infoLabel = new JLabel("Click the action button below to spin up a new working viewport.", SwingConstants.CENTER);
-        infoLabel.setForeground(COLOR_TEXT_WHITE);
-        infoLabel.setFont(new Font("Arial", Font.PLAIN, 16));
-        creationPanel.add(infoLabel, BorderLayout.CENTER);
-
-        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 40));
-        bottomPanel.setBackground(COLOR_BG);
-        
-        JButton createButton = new JButton("Create New Page");
-        createButton.setPreferredSize(new Dimension(160, 40));
-        createButton.setBackground(COLOR_BUTTON_GREEN);
-        createButton.setForeground(COLOR_TEXT_WHITE);
-        createButton.setFocusPainted(false);
-        createButton.setBorderPainted(false);
-        createButton.setFont(new Font("Arial", Font.BOLD, 14));
-
-        createButton.addActionListener(e -> createNewPage());
-        bottomPanel.add(createButton);
-        creationPanel.add(bottomPanel, BorderLayout.SOUTH);
-
-        contentContainer.add(creationPanel, "CREATION_SCREEN");
-        cardLayout.show(contentContainer, "CREATION_SCREEN");
-    }
-
-    private void createNewPage() {
+    private void addNewPage() {
         pageCounter++;
-        String pageId = "PAGE_" + pageCounter;
+        String pageId = "page_" + pageCounter;
+        String pageName = "Page " + pageCounter;
 
-        JPanel pageWorkspace = new JPanel(new GridBagLayout());
-        pageWorkspace.setBackground(COLOR_BG);
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(15, 30, 15, 30);
-        gbc.fill = GridBagConstraints.BOTH;
+        // Create UI elements for the page view
+        JPanel pagePanel = new JPanel(new BorderLayout());
+        pagePanel.setBackground(COLOR_BG);
+        pagePanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        // Custom Compact Input Text Box Module Area
-        JTextArea inputTextArea = new JTextArea();
-        inputTextArea.setBackground(COLOR_TEXTBOX_BG);
-        inputTextArea.setForeground(COLOR_TEXT_WHITE);
-        inputTextArea.setCaretColor(COLOR_TEXT_WHITE);
-        inputTextArea.setFont(new Font("Arial", Font.PLAIN, 15));
-        inputTextArea.setLineWrap(true);
-        inputTextArea.setWrapStyleWord(true);
-        inputTextArea.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+        JLabel titleLabel = new JLabel(pageName);
+        titleLabel.setFont(new Font("SansSerif", Font.BOLD, 24));
+        titleLabel.setForeground(COLOR_TEXT_WHITE);
+        titleLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 15, 0));
+        pagePanel.add(titleLabel, BorderLayout.NORTH);
 
-        // Restore saved document configurations dynamically
-        File pageStorageFile = new File("mods", pageId + "_data.txt");
-        if (pageStorageFile.exists()) {
-            try {
-                String savedText = new String(Files.readAllBytes(pageStorageFile.toPath()));
-                inputTextArea.setText(savedText);
-            } catch (IOException ignored) {}
-        }
+        JTextArea textArea = new JTextArea();
+        textArea.setBackground(COLOR_TEXTBOX_BG);
+        textArea.setForeground(COLOR_TEXT_WHITE);
+        textArea.setCaretColor(COLOR_TEXT_WHITE);
+        textArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
+        textArea.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        
+        JScrollPane textScroll = new JScrollPane(textArea);
+        textScroll.setBorder(BorderFactory.createLineBorder(COLOR_HIGHLIGHT));
+        pagePanel.add(textScroll, BorderLayout.CENTER);
 
-        // Live text modifications persistence engine thread sync tracker
-        inputTextArea.getDocument().addDocumentListener(new DocumentListener() {
-            private void commitToDisk() {
-                try {
-                    Files.write(pageStorageFile.toPath(), inputTextArea.getText().getBytes());
-                } catch (IOException ignored) {}
-            }
-            @Override public void insertUpdate(DocumentEvent e) { commitToDisk(); }
-            @Override public void removeUpdate(DocumentEvent e) { commitToDisk(); }
-            @Override public void changedUpdate(DocumentEvent e) { commitToDisk(); }
-        });
+        // Track page state
+        PageData pageData = new PageData(pageId, pageName, pagePanel, textArea);
+        pages.add(pageData);
 
-        JScrollPane scrollPane = new JScrollPane(inputTextArea);
-        scrollPane.setBorder(BorderFactory.createEmptyBorder());
-        scrollPane.getViewport().setBackground(COLOR_TEXTBOX_BG);
-
-        // Constrain layout sizing horizontally slightly down from default bounds
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.gridwidth = 2; 
-        gbc.weightx = 0.65; 
-        gbc.weighty = 0.75; 
-        pageWorkspace.add(scrollPane, gbc);
-
-        // Functional "Mods" Button Action Layer Component
-        JButton modsButton = new JButton("Mods");
-        modsButton.setBackground(COLOR_BUTTON_GRAY);
-        modsButton.setForeground(COLOR_TEXT_WHITE);
-        modsButton.setFocusPainted(false);
-        modsButton.setBorderPainted(false);
-        modsButton.setFont(new Font("Arial", Font.BOLD, 14));
-
-        modsButton.addActionListener(e -> {
-            File directory = new File("mods");
-            if (Desktop.isDesktopSupported()) {
-                try {
-                    Desktop.getDesktop().open(directory);
-                } catch (IOException ex) {
-                    JOptionPane.showMessageDialog(frame, "Unable to track system file target location path.");
-                }
-            }
-            
-            // Collect mod folder element tracking details and stream to interface view
-            File[] fileCollection = directory.listFiles();
-            if (fileCollection != null && fileCollection.length > 0) {
-                StringBuilder builder = new StringBuilder();
-                builder.append("\n=== Mod Folder Contents ===\n");
-                for (File file : fileCollection) {
-                    builder.append("- ").append(file.getName()).append("\n");
-                }
-                inputTextArea.append(builder.toString());
-            }
-        });
-
-        gbc.gridx = 0;
-        gbc.gridy = 1;
-        gbc.gridwidth = 1;
-        gbc.weightx = 0.30;
-        gbc.weighty = 0.10;
-        pageWorkspace.add(modsButton, gbc);
-
-        // Application Shutdown Execution Component Layer "Launch"
-        JButton launchButton = new JButton("Launch");
-        launchButton.setBackground(COLOR_BUTTON_GREEN);
-        launchButton.setForeground(COLOR_TEXT_WHITE);
-        launchButton.setFocusPainted(false);
-        launchButton.setBorderPainted(false);
-        launchButton.setFont(new Font("Arial", Font.BOLD, 16));
-        launchButton.addActionListener(e -> System.exit(0));
-
-        gbc.gridx = 1;
-        gbc.gridy = 1;
-        gbc.gridwidth = 1;
-        gbc.weightx = 0.35;
-        gbc.weighty = 0.10;
-        pageWorkspace.add(launchButton, gbc);
-
-        // Sidebar Navigation Node Object Properties Initialization
-        JPanel iconItem = new JPanel(new GridBagLayout());
-        iconItem.setPreferredSize(new Dimension(60, 60));
-        iconItem.setMaximumSize(new Dimension(60, 60));
-        iconItem.setBackground(COLOR_SIDEBAR);
-
-        JLabel circleVisual = new JLabel("", SwingConstants.CENTER);
-        circleVisual.setPreferredSize(new Dimension(45, 45));
-        circleVisual.setOpaque(true);
-        circleVisual.setBackground(COLOR_BG);
-        iconItem.add(circleVisual);
-
-        PageData newPageData = new PageData(pageId, iconItem, circleVisual, pageWorkspace);
-        iconItem.addMouseListener(new MouseAdapter() {
+        // Sync text modifications directly inside PageData state tracking
+        textArea.getDocument().addDocumentListener(new DocumentListener() {
             @Override
-            public void mouseClicked(MouseEvent e) {
-                switchActivePage(newPageData);
-            }
+            public void insertUpdate(DocumentEvent e) { pageData.setContent(textArea.getText()); }
+            @Override
+            public void removeUpdate(DocumentEvent e) { pageData.setContent(textArea.getText()); }
+            @Override
+            public void changedUpdate(DocumentEvent e) { pageData.setContent(textArea.getText()); }
         });
 
-        pages.add(0, newPageData);
-        contentContainer.add(pageWorkspace, pageId);
-
-        rebuildSidebarView();
-        switchActivePage(newPageData);
+        // Add to main content viewport structure
+        contentContainer.add(pagePanel, pageId);
+        
+        // Rebuild sidebar navigation tabs
+        refreshSidebar();
+        switchToPage(pageData);
     }
 
-        JPanel addIconPanel = new JPanel(new GridBagLayout());
-        addIconPanel.setPreferredSize(new Dimension(60, 60));
-        addIconPanel.setMaximumSize(new Dimension(60, 60));
-        addIconPanel.setBackground(COLOR_SIDEBAR);
-        
-        JLabel plusLabel = new JLabel("+", SwingConstants.CENTER);
-        plusLabel.setPreferredSize(new Dimension(45, 45));
-        plusLabel.setOpaque(true);
-        plusLabel.setBackground(COLOR_BG);
-        plusLabel.setForeground(COLOR_TEXT_WHITE);
-        plusLabel.setFont(new Font("Arial", Font.BOLD, 22));
-        
-        addIconPanel.add(plusLabel);
-        addIconPanel.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                clearSidebarHighlights();
-                cardLayout.show(contentContainer, "CREATION_SCREEN");
-            }
-        });
-        
-        sidebar.add(addIconPanel);
-        sidebar.add(Box.createVerticalStrut(15));
+    private void switchToPage(PageData page) {
+        activePage = page;
+        if (page == null) {
+            cardLayout.show(contentContainer, "PLACEHOLDER");
+        } else {
+            cardLayout.show(contentContainer, page.getId());
+        }
+        refreshSidebar();
+    }
 
-        for (PageData p : pages) {
-            sidebar.add(p.iconPanel);
-            sidebar.add(Box.createVerticalStrut(10));
+    private void refreshSidebar() {
+        sidebar.removeAll();
+
+        for (PageData page : pages) {
+            JPanel tab = new JPanel(new BorderLayout());
+            tab.setMaximumSize(new Dimension(200, 40));
+            tab.setPreferredSize(new Dimension(200, 40));
+            tab.setBackground(page == activePage ? COLOR_HIGHLIGHT : COLOR_SIDEBAR);
+            tab.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+
+            JLabel lblName = new JLabel(page.getName());
+            lblName.setForeground(COLOR_TEXT_WHITE);
+            tab.add(lblName, BorderLayout.CENTER);
+
+            tab.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mousePressed(MouseEvent e) {
+                    switchToPage(page);
+                }
+            });
+
+            sidebar.add(tab);
+            sidebar.add(Box.createVerticalStrut(2)); // Slight divider spacing
         }
 
         sidebar.revalidate();
         sidebar.repaint();
     }
 
-    private void switchActivePage(PageData targetPage) {
-        activePage = targetPage;
-        clearSidebarHighlights();
-        targetPage.visualNode.setBackground(COLOR_HIGHLIGHT);
-        cardLayout.show(contentContainer, targetPage.id);
-    }
-
-    private void clearSidebarHighlights() {
-        for (PageData p : pages) {
-            p.visualNode.setBackground(COLOR_BG);
+    private void scanModsFolder(File modsDir) {
+        File[] files = modsDir.listFiles();
+        if (files == null || files.length == 0) {
+            JOptionPane.showMessageDialog(frame, "No files found in the 'mods' folder.", "Mods Scanner", JOptionPane.INFORMATION_MESSAGE);
+            return;
         }
+
+        StringBuilder fileList = new StringBuilder("Discovered files inside /mods:\n");
+        for (File f : files) {
+            if (f.isFile()) {
+                fileList.append("- ").append(f.getName()).append(" (").append(f.length()).append(" bytes)\n");
+            }
+        }
+        
+        JOptionPane.showMessageDialog(frame, fileList.toString(), "Mods Found", JOptionPane.INFORMATION_MESSAGE);
     }
 
+    private JButton createStyledButton(String text, Color bg) {
+        JButton btn = new JButton(text);
+        btn.setBackground(bg);
+        btn.setForeground(COLOR_TEXT_WHITE);
+        btn.setFocusPainted(false);
+        btn.setBorderPainted(false);
+        btn.setFont(new Font("SansSerif", Font.BOLD, 12));
+        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        return btn;
+    }
+
+    // Inner model layer tracking page attributes and buffered inputs safely
     private static class PageData {
-        String id;
-        JPanel iconPanel;
-        JLabel visualNode;
-        JPanel contentPanel;
+        private final String id;
+        private final String name;
+        private final JPanel panel;
+        private final JTextArea textArea;
+        private String content = "";
 
-        PageData(String id, JPanel iconPanel, JLabel visualNode, JPanel contentPanel) {
+        public PageData(String id, String name, JPanel panel, JTextArea textArea) {
             this.id = id;
-            this.iconPanel = iconPanel;
-            this.visualNode = visualNode;
-            this.contentPanel = contentPanel;
+            this.name = name;
+            this.panel = panel;
+            this.textArea = textArea;
         }
+
+        public String getId() { return id; }
+        public String getName() { return name; }
+        public JPanel getPanel() { return panel; }
+        public String getContent() { return content; }
+        public void setContent(String content) { this.content = content; }
     }
 }
