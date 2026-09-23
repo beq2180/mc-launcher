@@ -2,9 +2,14 @@
 package com.example;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,11 +23,12 @@ public class MultiPageApp {
     private PageData activePage = null;
     private int pageCounter = 0;
 
-    // UI Style Constants from layout specifications
+    // UI Configuration Theme Colors
     private static final Color COLOR_BG = new Color(0, 0, 0);
     private static final Color COLOR_SIDEBAR = new Color(74, 74, 74);
     private static final Color COLOR_TEXTBOX_BG = new Color(90, 90, 90);
     private static final Color COLOR_BUTTON_GREEN = new Color(0, 185, 106);
+    private static final Color COLOR_BUTTON_GRAY = new Color(60, 60, 60);
     private static final Color COLOR_TEXT_WHITE = new Color(255, 255, 255);
     private static final Color COLOR_HIGHLIGHT = new Color(130, 130, 130);
 
@@ -31,18 +37,22 @@ public class MultiPageApp {
     }
 
     private void initAndShowGUI() {
-        frame = new JFrame("Multi-Page Application");
+        // Initialize the local 'mods' directory safely if it doesn't exist
+        File modsDir = new File("mods");
+        if (!modsDir.exists()) {
+            modsDir.mkdirs();
+        }
+
+        frame = new JFrame("Multi-Page App with Mods Integration");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(800, 600);
+        frame.setSize(850, 650);
         frame.setLocationRelativeTo(null);
         frame.getContentPane().setBackground(COLOR_BG);
-
-        // Main Layout: Sidebar Left, Content Right
         frame.setLayout(new BorderLayout());
 
-        // Setup Sidebar Container with pill layout parameters
+        // Left Navigation Pillar Sidebar Layout
         JPanel sidebarWrapper = new JPanel(new BorderLayout());
-        sidebarWrapper.setPreferredSize(new Dimension(80, 600));
+        sidebarWrapper.setPreferredSize(new Dimension(80, 650));
         sidebarWrapper.setBackground(COLOR_SIDEBAR);
 
         sidebar = new JPanel();
@@ -50,7 +60,7 @@ public class MultiPageApp {
         sidebar.setBackground(COLOR_SIDEBAR);
         sidebarWrapper.add(sidebar, BorderLayout.NORTH);
 
-        // Setup Main Content Card Manager Layout
+        // Core Viewport Component Workspace Card Manager
         cardLayout = new CardLayout();
         contentContainer = new JPanel(cardLayout);
         contentContainer.setBackground(COLOR_BG);
@@ -58,9 +68,7 @@ public class MultiPageApp {
         frame.add(sidebarWrapper, BorderLayout.WEST);
         frame.add(contentContainer, BorderLayout.CENTER);
 
-        // Initialize with default template page workspace context
         showCreationScreen();
-
         frame.setVisible(true);
     }
 
@@ -76,7 +84,7 @@ public class MultiPageApp {
         headerPanel.add(backArrow);
         creationPanel.add(headerPanel, BorderLayout.NORTH);
 
-        JLabel infoLabel = new JLabel("Click the button below to initialize a new page view.", SwingConstants.CENTER);
+        JLabel infoLabel = new JLabel("Click the action button below to spin up a new working viewport.", SwingConstants.CENTER);
         infoLabel.setForeground(COLOR_TEXT_WHITE);
         infoLabel.setFont(new Font("Arial", Font.PLAIN, 16));
         creationPanel.add(infoLabel, BorderLayout.CENTER);
@@ -93,7 +101,6 @@ public class MultiPageApp {
         createButton.setFont(new Font("Arial", Font.BOLD, 14));
 
         createButton.addActionListener(e -> createNewPage());
-
         bottomPanel.add(createButton);
         creationPanel.add(bottomPanel, BorderLayout.SOUTH);
 
@@ -105,53 +112,109 @@ public class MultiPageApp {
         pageCounter++;
         String pageId = "PAGE_" + pageCounter;
 
-        // Parent container for individual page layout layers
         JPanel pageWorkspace = new JPanel(new GridBagLayout());
         pageWorkspace.setBackground(COLOR_BG);
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(20, 40, 20, 40);
+        gbc.insets = new Insets(15, 30, 15, 30);
         gbc.fill = GridBagConstraints.BOTH;
 
-        // 1. Large Functional Input Layer (Gray Text Box Area)
+        // Custom Compact Input Text Box Module Area
         JTextArea inputTextArea = new JTextArea();
         inputTextArea.setBackground(COLOR_TEXTBOX_BG);
         inputTextArea.setForeground(COLOR_TEXT_WHITE);
         inputTextArea.setCaretColor(COLOR_TEXT_WHITE);
-        inputTextArea.setFont(new Font("Arial", Font.PLAIN, 16));
+        inputTextArea.setFont(new Font("Arial", Font.PLAIN, 15));
         inputTextArea.setLineWrap(true);
         inputTextArea.setWrapStyleWord(true);
-        inputTextArea.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+        inputTextArea.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
 
-        // Enforce rounded pane view via clean abstraction constraints
+        // Restore saved document configurations dynamically
+        File pageStorageFile = new File("mods", pageId + "_data.txt");
+        if (pageStorageFile.exists()) {
+            try {
+                String savedText = new String(Files.readAllBytes(pageStorageFile.toPath()));
+                inputTextArea.setText(savedText);
+            } catch (IOException ignored) {}
+        }
+
+        // Live text modifications persistence engine thread sync tracker
+        inputTextArea.getDocument().addDocumentListener(new DocumentListener() {
+            private void commitToDisk() {
+                try {
+                    Files.write(pageStorageFile.toPath(), inputTextArea.getText().getBytes());
+                } catch (IOException ignored) {}
+            }
+            @Override public void insertUpdate(DocumentEvent e) { commitToDisk(); }
+            @Override public void removeUpdate(DocumentEvent e) { commitToDisk(); }
+            @Override public void changedUpdate(DocumentEvent e) { commitToDisk(); }
+        });
+
         JScrollPane scrollPane = new JScrollPane(inputTextArea);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
         scrollPane.getViewport().setBackground(COLOR_TEXTBOX_BG);
 
+        // Constrain layout sizing horizontally slightly down from default bounds
         gbc.gridx = 0;
         gbc.gridy = 0;
-        gbc.weightx = 1.0;
-        gbc.weighty = 0.8; // Occupies large upper grid sector
+        gbc.gridwidth = 2; 
+        gbc.weightx = 0.65; 
+        gbc.weighty = 0.75; 
         pageWorkspace.add(scrollPane, gbc);
 
-        // 2. Green Launch Control Operator Interaction Action Block
+        // Functional "Mods" Button Action Layer Component
+        JButton modsButton = new JButton("Mods");
+        modsButton.setBackground(COLOR_BUTTON_GRAY);
+        modsButton.setForeground(COLOR_TEXT_WHITE);
+        modsButton.setFocusPainted(false);
+        modsButton.setBorderPainted(false);
+        modsButton.setFont(new Font("Arial", Font.BOLD, 14));
+
+        modsButton.addActionListener(e -> {
+            File directory = new File("mods");
+            if (Desktop.isDesktopSupported()) {
+                try {
+                    Desktop.getDesktop().open(directory);
+                } catch (IOException ex) {
+                    JOptionPane.showMessageDialog(frame, "Unable to track system file target location path.");
+                }
+            }
+            
+            // Collect mod folder element tracking details and stream to interface view
+            File[] fileCollection = directory.listFiles();
+            if (fileCollection != null && fileCollection.length > 0) {
+                StringBuilder builder = new StringBuilder();
+                builder.append("\n=== Mod Folder Contents ===\n");
+                for (File file : fileCollection) {
+                    builder.append("- ").append(file.getName()).append("\n");
+                }
+                inputTextArea.append(builder.toString());
+            }
+        });
+
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.gridwidth = 1;
+        gbc.weightx = 0.30;
+        gbc.weighty = 0.10;
+        pageWorkspace.add(modsButton, gbc);
+
+        // Application Shutdown Execution Component Layer "Launch"
         JButton launchButton = new JButton("Launch");
         launchButton.setBackground(COLOR_BUTTON_GREEN);
         launchButton.setForeground(COLOR_TEXT_WHITE);
         launchButton.setFocusPainted(false);
         launchButton.setBorderPainted(false);
-        launchButton.setFont(new Font("Arial", Font.BOLD, 18));
-        launchButton.setPreferredSize(new Dimension(0, 50));
-
-        // Triggers safe exit protocol down operational scope context lines
+        launchButton.setFont(new Font("Arial", Font.BOLD, 16));
         launchButton.addActionListener(e -> System.exit(0));
 
-        gbc.gridx = 0;
+        gbc.gridx = 1;
         gbc.gridy = 1;
-        gbc.weightx = 1.0;
-        gbc.weighty = 0.1; // Occupies lower action tier space
+        gbc.gridwidth = 1;
+        gbc.weightx = 0.35;
+        gbc.weighty = 0.10;
         pageWorkspace.add(launchButton, gbc);
 
-        // Formulate corresponding sidebar list container elements
+        // Sidebar Navigation Node Object Properties Initialization
         JPanel iconItem = new JPanel(new GridBagLayout());
         iconItem.setPreferredSize(new Dimension(60, 60));
         iconItem.setMaximumSize(new Dimension(60, 60));
@@ -161,11 +224,9 @@ public class MultiPageApp {
         circleVisual.setPreferredSize(new Dimension(45, 45));
         circleVisual.setOpaque(true);
         circleVisual.setBackground(COLOR_BG);
-        
         iconItem.add(circleVisual);
 
         PageData newPageData = new PageData(pageId, iconItem, circleVisual, pageWorkspace);
-
         iconItem.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -173,7 +234,6 @@ public class MultiPageApp {
             }
         });
 
-        // Insert operations at index location zero pushes older entities downwards
         pages.add(0, newPageData);
         contentContainer.add(pageWorkspace, pageId);
 
@@ -181,11 +241,6 @@ public class MultiPageApp {
         switchActivePage(newPageData);
     }
 
-    private void rebuildSidebarView() {
-        sidebar.removeAll();
-        sidebar.add(Box.createVerticalStrut(15));
-
-        // Operational instantiation node creation action setup (+)
         JPanel addIconPanel = new JPanel(new GridBagLayout());
         addIconPanel.setPreferredSize(new Dimension(60, 60));
         addIconPanel.setMaximumSize(new Dimension(60, 60));
@@ -210,7 +265,6 @@ public class MultiPageApp {
         sidebar.add(addIconPanel);
         sidebar.add(Box.createVerticalStrut(15));
 
-        // Draw active tracking paths array into target hierarchy positions
         for (PageData p : pages) {
             sidebar.add(p.iconPanel);
             sidebar.add(Box.createVerticalStrut(10));
@@ -223,8 +277,6 @@ public class MultiPageApp {
     private void switchActivePage(PageData targetPage) {
         activePage = targetPage;
         clearSidebarHighlights();
-        
-        // Highlights the specific interior layer module elements on selected tracking targets
         targetPage.visualNode.setBackground(COLOR_HIGHLIGHT);
         cardLayout.show(contentContainer, targetPage.id);
     }
