@@ -18,9 +18,10 @@ public class MultiPageApp {
     private PageData activePage = null;
     private int pageCounter = 0;
 
-    // UI Style Constants
+    // UI Style Constants from layout specifications
     private static final Color COLOR_BG = new Color(0, 0, 0);
     private static final Color COLOR_SIDEBAR = new Color(74, 74, 74);
+    private static final Color COLOR_TEXTBOX_BG = new Color(90, 90, 90);
     private static final Color COLOR_BUTTON_GREEN = new Color(0, 185, 106);
     private static final Color COLOR_TEXT_WHITE = new Color(255, 255, 255);
     private static final Color COLOR_HIGHLIGHT = new Color(130, 130, 130);
@@ -39,53 +40,47 @@ public class MultiPageApp {
         // Main Layout: Sidebar Left, Content Right
         frame.setLayout(new BorderLayout());
 
-        // Setup Sidebar Container
+        // Setup Sidebar Container with pill layout parameters
         JPanel sidebarWrapper = new JPanel(new BorderLayout());
         sidebarWrapper.setPreferredSize(new Dimension(80, 600));
         sidebarWrapper.setBackground(COLOR_SIDEBAR);
 
-        // Sidebar list for page icons (grows downward)
         sidebar = new JPanel();
         sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
         sidebar.setBackground(COLOR_SIDEBAR);
         sidebarWrapper.add(sidebar, BorderLayout.NORTH);
 
-        // Setup Main Content Layout
+        // Setup Main Content Card Manager Layout
         cardLayout = new CardLayout();
         contentContainer = new JPanel(cardLayout);
         contentContainer.setBackground(COLOR_BG);
 
-        // Add core panels to frame
         frame.add(sidebarWrapper, BorderLayout.WEST);
         frame.add(contentContainer, BorderLayout.CENTER);
 
-        // Initialize with Creation Screen
+        // Initialize with default template page workspace context
         showCreationScreen();
 
         frame.setVisible(true);
     }
 
     private void showCreationScreen() {
-        // Create the specialized Page Creation View
         JPanel creationPanel = new JPanel(new BorderLayout());
         creationPanel.setBackground(COLOR_BG);
 
-        // Top Header Panel containing a back arrow
         JPanel headerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 20));
         headerPanel.setBackground(COLOR_BG);
-        JLabel backArrow = new JLabel("➔"); // Placeholder visual navigation anchor
+        JLabel backArrow = new JLabel("➔");
         backArrow.setForeground(COLOR_TEXT_WHITE);
         backArrow.setFont(new Font("Arial", Font.BOLD, 24));
         headerPanel.add(backArrow);
         creationPanel.add(headerPanel, BorderLayout.NORTH);
 
-        // Central Body Text Instruction Area
-        JLabel infoLabel = new JLabel("Click the button below to initialize a new viewport page.", SwingConstants.CENTER);
+        JLabel infoLabel = new JLabel("Click the button below to initialize a new page view.", SwingConstants.CENTER);
         infoLabel.setForeground(COLOR_TEXT_WHITE);
         infoLabel.setFont(new Font("Arial", Font.PLAIN, 16));
         creationPanel.add(infoLabel, BorderLayout.CENTER);
 
-        // Bottom Action Panel hosting the creation action
         JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 40));
         bottomPanel.setBackground(COLOR_BG);
         
@@ -97,14 +92,11 @@ public class MultiPageApp {
         createButton.setBorderPainted(false);
         createButton.setFont(new Font("Arial", Font.BOLD, 14));
 
-        createButton.addActionListener(e -> {
-            createNewPage();
-        });
+        createButton.addActionListener(e -> createNewPage());
 
         bottomPanel.add(createButton);
         creationPanel.add(bottomPanel, BorderLayout.SOUTH);
 
-        // Register view structure
         contentContainer.add(creationPanel, "CREATION_SCREEN");
         cardLayout.show(contentContainer, "CREATION_SCREEN");
     }
@@ -112,35 +104,68 @@ public class MultiPageApp {
     private void createNewPage() {
         pageCounter++;
         String pageId = "PAGE_" + pageCounter;
-        String pageTitle = "Page " + pageCounter;
 
-        // Formulate canvas panel for content architecture
-        JPanel contentPanel = new JPanel(new BorderLayout());
-        contentPanel.setBackground(COLOR_BG);
-        
-        JLabel contentLabel = new JLabel("Welcome to " + pageTitle + " Content Body Layer", SwingConstants.CENTER);
-        contentLabel.setForeground(COLOR_TEXT_WHITE);
-        contentLabel.setFont(new Font("Arial", Font.BOLD, 18));
-        contentPanel.add(contentLabel, BorderLayout.CENTER);
+        // Parent container for individual page layout layers
+        JPanel pageWorkspace = new JPanel(new GridBagLayout());
+        pageWorkspace.setBackground(COLOR_BG);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(20, 40, 20, 40);
+        gbc.fill = GridBagConstraints.BOTH;
 
-        // Formulate corresponding sidebar element
+        // 1. Large Functional Input Layer (Gray Text Box Area)
+        JTextArea inputTextArea = new JTextArea();
+        inputTextArea.setBackground(COLOR_TEXTBOX_BG);
+        inputTextArea.setForeground(COLOR_TEXT_WHITE);
+        inputTextArea.setCaretColor(COLOR_TEXT_WHITE);
+        inputTextArea.setFont(new Font("Arial", Font.PLAIN, 16));
+        inputTextArea.setLineWrap(true);
+        inputTextArea.setWrapStyleWord(true);
+        inputTextArea.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+
+        // Enforce rounded pane view via clean abstraction constraints
+        JScrollPane scrollPane = new JScrollPane(inputTextArea);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        scrollPane.getViewport().setBackground(COLOR_TEXTBOX_BG);
+
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 1.0;
+        gbc.weighty = 0.8; // Occupies large upper grid sector
+        pageWorkspace.add(scrollPane, gbc);
+
+        // 2. Green Launch Control Operator Interaction Action Block
+        JButton launchButton = new JButton("Launch");
+        launchButton.setBackground(COLOR_BUTTON_GREEN);
+        launchButton.setForeground(COLOR_TEXT_WHITE);
+        launchButton.setFocusPainted(false);
+        launchButton.setBorderPainted(false);
+        launchButton.setFont(new Font("Arial", Font.BOLD, 18));
+        launchButton.setPreferredSize(new Dimension(0, 50));
+
+        // Triggers safe exit protocol down operational scope context lines
+        launchButton.addActionListener(e -> System.exit(0));
+
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.weightx = 1.0;
+        gbc.weighty = 0.1; // Occupies lower action tier space
+        pageWorkspace.add(launchButton, gbc);
+
+        // Formulate corresponding sidebar list container elements
         JPanel iconItem = new JPanel(new GridBagLayout());
         iconItem.setPreferredSize(new Dimension(60, 60));
         iconItem.setMaximumSize(new Dimension(60, 60));
         iconItem.setBackground(COLOR_SIDEBAR);
-        iconItem.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
-        JLabel circleVisual = new JLabel(String.valueOf(pageCounter), SwingConstants.CENTER);
+        JLabel circleVisual = new JLabel("", SwingConstants.CENTER);
         circleVisual.setPreferredSize(new Dimension(45, 45));
         circleVisual.setOpaque(true);
         circleVisual.setBackground(COLOR_BG);
-        circleVisual.setForeground(COLOR_TEXT_WHITE);
-        circleVisual.setFont(new Font("Arial", Font.BOLD, 14));
+        
         iconItem.add(circleVisual);
 
-        PageData newPageData = new PageData(pageId, iconItem, circleVisual, contentPanel);
+        PageData newPageData = new PageData(pageId, iconItem, circleVisual, pageWorkspace);
 
-        // Wire click interactivity directly onto selection item
         iconItem.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -148,14 +173,11 @@ public class MultiPageApp {
             }
         });
 
-        // Insert at index 0 pushes prior nodes downward
+        // Insert operations at index location zero pushes older entities downwards
         pages.add(0, newPageData);
-        contentContainer.add(contentPanel, pageId);
+        contentContainer.add(pageWorkspace, pageId);
 
-        // Reconstruct graphical hierarchy of sidebar
         rebuildSidebarView();
-        
-        // Auto-focus the newly instantiated workspace
         switchActivePage(newPageData);
     }
 
@@ -163,7 +185,7 @@ public class MultiPageApp {
         sidebar.removeAll();
         sidebar.add(Box.createVerticalStrut(15));
 
-        // Inject the primary add operator control top-level
+        // Operational instantiation node creation action setup (+)
         JPanel addIconPanel = new JPanel(new GridBagLayout());
         addIconPanel.setPreferredSize(new Dimension(60, 60));
         addIconPanel.setMaximumSize(new Dimension(60, 60));
@@ -188,7 +210,7 @@ public class MultiPageApp {
         sidebar.add(addIconPanel);
         sidebar.add(Box.createVerticalStrut(15));
 
-        // Append managed application pages down the collection hierarchy
+        // Draw active tracking paths array into target hierarchy positions
         for (PageData p : pages) {
             sidebar.add(p.iconPanel);
             sidebar.add(Box.createVerticalStrut(10));
@@ -202,7 +224,7 @@ public class MultiPageApp {
         activePage = targetPage;
         clearSidebarHighlights();
         
-        // Apply target highlight configuration
+        // Highlights the specific interior layer module elements on selected tracking targets
         targetPage.visualNode.setBackground(COLOR_HIGHLIGHT);
         cardLayout.show(contentContainer, targetPage.id);
     }
@@ -213,7 +235,6 @@ public class MultiPageApp {
         }
     }
 
-    // Structured Entity wrapping state data for programmatic mutation
     private static class PageData {
         String id;
         JPanel iconPanel;
