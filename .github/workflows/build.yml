@@ -1,0 +1,32 @@
+# .github/workflows/build.yml
+name: Java Package Build Deployment
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  compile-and-package:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Source Context
+      uses: actions/checkout@v4
+
+    - name: Initialize JDK Runtime Environment
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: maven
+
+    - name: Execute Maven Build Specification
+      run: mvn clean package
+
+    - name: Archive Compiled Target Workspace Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: dynamic-multipage-jar
+        path: target/*.jar
